@@ -76,7 +76,8 @@ target_link_libraries( makesdna_cli
         -Wl,--end-group
         )
 set_target_properties( makesdna_cli PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/cli_output" )
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/cli_output"
+        LINK_FLAGS "-static" )
 
 # Searches for a specified prebuilt library and stores the path as a
 # variable. Because CMake includes system libraries in the search path by
