@@ -23,6 +23,19 @@ add_library( # Sets the name of the library.
              # Provides a relative path to your source file(s).
              native-lib.cpp )
 
+# Standalone CLI executable, added 2026-08-15: the Android emulator path
+# (KVM/root/system-image ABI matching) turned out to be a dead end in
+# GH-hosted CI for reasons that have nothing to do with this tool itself
+# (see stage1-setup.yml job2 comments for the full story). native-lib.cpp
+# is a trivial JNI shim calling a plain C main() that already lives inside
+# libmakesdna.a (this IS Blender's own standalone makesdna CLI tool) - so
+# build that main() as an actual standalone arm64-v8a executable instead
+# and run it directly under qemu-user-static. cli_main.c is an
+# intentionally empty translation unit; it exists only so add_executable
+# has a source file to compile, the real main() gets pulled from the
+# imported static lib below to satisfy the CRT's undefined reference.
+add_executable( makesdna_cli cli_main.c )
+
 set(blenderLibDir    D:/FreeProjects/Blender/Blender/Blender-android_arm64/)
 set(blenderLibLibDir D:/FreeProjects/Blender/Blender/Utilities-android_arm64/MakeBlender/app/.cxx/cmake/release/arm64-v8a/lib/)
 
@@ -56,6 +69,14 @@ target_link_libraries( # Specifies the target library.
         ${BlenderLibNames}
         -Wl,--end-group
         )
+
+target_link_libraries( makesdna_cli
+        -Wl,--start-group
+        ${BlenderLibNames}
+        -Wl,--end-group
+        )
+set_target_properties( makesdna_cli PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/cli_output" )
 
 # Searches for a specified prebuilt library and stores the path as a
 # variable. Because CMake includes system libraries in the search path by
