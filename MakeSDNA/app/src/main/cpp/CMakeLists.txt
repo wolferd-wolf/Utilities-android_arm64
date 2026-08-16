@@ -77,7 +77,15 @@ target_link_libraries( makesdna_cli
         )
 set_target_properties( makesdna_cli PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/cli_output"
-        LINK_FLAGS "-static" )
+        LINK_FLAGS "-static"
+        LINKER_LANGUAGE CXX )
+# 2026-08-16: LINKER_LANGUAGE CXX added after run 31936460696's real link
+# error - cli_main.c being a plain .c file made CMake pick the C driver
+# (clang.exe) to link, which doesn't pull in the C++ runtime (libc++,
+# exceptions, RTTI, __cxa_*, __gxx_personality_v0) that libmakesdna.a's
+# C++ object code (e.g. guardedalloc's memory_usage.cc) needs. Forcing
+# CXX makes CMake use clang++ for the final link step instead, matching
+# what already happens automatically for native-lib.cpp next door.
 # 2026-08-15 (second pass): briefly tried dynamic linking to match
 # native-lib, matching what the real working OBlender app does - reverted
 # again. qemu-user-static needs to actually execute the guest's dynamic

@@ -137,7 +137,12 @@ target_link_libraries( makesrna_cli
         )
 set_target_properties( makesrna_cli PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/cli_output"
-        LINK_FLAGS "-static" )
+        LINK_FLAGS "-static"
+        LINKER_LANGUAGE CXX )
+# 2026-08-16: LINKER_LANGUAGE CXX added after run 31936460696's real link
+# error - see MakeSDNA/CMakeLists.txt for the full rationale, same fix
+# applies here (cli_main.c being plain C made CMake pick the C link
+# driver, missing the C++ runtime this huge BlenderLibNames set needs).
 # 2026-08-15 (second pass): briefly tried dynamic linking to match
 # native-lib/the real OBlender app - reverted again. qemu-user-static
 # needs to actually execute the guest's dynamic linker
