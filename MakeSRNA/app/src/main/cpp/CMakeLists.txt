@@ -136,29 +136,25 @@ target_link_libraries( makesrna_cli
         -Wl,--end-group
         )
 set_target_properties( makesrna_cli PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/cli_output" )
-# 2026-08-15: was LINK_FLAGS "-static" - reverted. The real, working
-# OBlender app (APP-android_arm64/OBlender) links this exact same
-# BlenderLibNames set against plain dynamic NDK system libs (log,
-# GLESv3, GLESv2, EGL, android, jnigraphics), not statically - if that's
-# what actually works for the real app, no reason to guess differently
-# here. NDK generally doesn't ship a static liblog.a for general linking
-# anyway, so -static was always going to risk an undefined-symbol link
-# failure the moment any of these 68 libs touch logging/GPU code paths.
-find_library( log-lib log )
-find_library( glesv3-lib GLESv3 )
-find_library( glesv2-lib GLESv2 )
-find_library( egl-lib EGL )
-find_library( android-lib android )
-find_library( jnigraphics-lib jnigraphics )
-target_link_libraries( makesrna_cli
-        ${glesv3-lib}
-        ${glesv2-lib}
-        ${egl-lib}
-        ${android-lib}
-        ${jnigraphics-lib}
-        ${log-lib}
-        )
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/cli_output"
+        LINK_FLAGS "-static" )
+# 2026-08-15 (second pass): briefly tried dynamic linking to match
+# native-lib/the real OBlender app - reverted again. qemu-user-static
+# needs to actually execute the guest's dynamic linker
+# (/system/bin/linker64 on Android) under emulation for a dynamically
+# linked binary; that's part of the Android OS image, not something the
+# NDK ships, and there's no real/emulated device in this environment to
+# source it from. Static avoids needing an interpreter at all. The
+# __android_log_* symbols now come from cli_main.c's own stub
+# implementations (NDK doesn't ship a redistributable static liblog.a for
+# general linking). Deliberately NOT linking GLESv3/GLESv2/EGL/android/
+# jnigraphics here even though native-lib does - unlike logging, which
+# Blender code calls into pervasively, GPU/graphics functions are only
+# actually referenced by bf_gpu's rendering code paths, which makesrna's
+# headless RNA-generation main() should never reach. If the static link
+# fails on one of those symbols, that's real evidence of exactly which
+# ones are needed and worth stubbing - guessing the full GLES/EGL surface
+# blindly isn't worth the risk of stubbing something wrong.
 # Searches for a specified prebuilt library and stores the path as a
 # variable. Because CMake includes system libraries in the search path by
 # default, you only need to specify the name of the public NDK library

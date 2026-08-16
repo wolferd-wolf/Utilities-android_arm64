@@ -76,11 +76,18 @@ target_link_libraries( makesdna_cli
         -Wl,--end-group
         )
 set_target_properties( makesdna_cli PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/cli_output" )
-# 2026-08-15: was LINK_FLAGS "-static" - reverted to match native-lib's
-# proven-working dynamic linking (see MakeSRNA/CMakeLists.txt for the
-# fuller rationale - same reasoning applies here even though makesdna's
-# dependency graph is much smaller and less likely to need logging).
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/cli_output"
+        LINK_FLAGS "-static" )
+# 2026-08-15 (second pass): briefly tried dynamic linking to match
+# native-lib, matching what the real working OBlender app does - reverted
+# again. qemu-user-static needs to actually execute the guest's dynamic
+# linker (/system/bin/linker64 on Android) under emulation for a
+# dynamically-linked binary; that binary is part of the Android OS image,
+# not something the NDK ships, and there's no real/emulated device in this
+# environment to source it from. Static avoids needing an interpreter at
+# all. The __android_log_* symbols this used to get from ${log-lib} now
+# come from cli_main.c's own stub implementations instead (NDK doesn't
+# ship a redistributable static liblog.a for general linking anyway).
 
 # Searches for a specified prebuilt library and stores the path as a
 # variable. Because CMake includes system libraries in the search path by
@@ -105,5 +112,3 @@ target_link_libraries( # Specifies the target library.
                        # Links the target library to the log library
                        # included in the NDK.
                        ${log-lib} )
-
-target_link_libraries( makesdna_cli ${log-lib} )
