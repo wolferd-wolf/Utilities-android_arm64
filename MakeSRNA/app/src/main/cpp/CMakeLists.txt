@@ -136,8 +136,29 @@ target_link_libraries( makesrna_cli
         -Wl,--end-group
         )
 set_target_properties( makesrna_cli PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/cli_output"
-        LINK_FLAGS "-static" )
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/cli_output" )
+# 2026-08-15: was LINK_FLAGS "-static" - reverted. The real, working
+# OBlender app (APP-android_arm64/OBlender) links this exact same
+# BlenderLibNames set against plain dynamic NDK system libs (log,
+# GLESv3, GLESv2, EGL, android, jnigraphics), not statically - if that's
+# what actually works for the real app, no reason to guess differently
+# here. NDK generally doesn't ship a static liblog.a for general linking
+# anyway, so -static was always going to risk an undefined-symbol link
+# failure the moment any of these 68 libs touch logging/GPU code paths.
+find_library( log-lib log )
+find_library( glesv3-lib GLESv3 )
+find_library( glesv2-lib GLESv2 )
+find_library( egl-lib EGL )
+find_library( android-lib android )
+find_library( jnigraphics-lib jnigraphics )
+target_link_libraries( makesrna_cli
+        ${glesv3-lib}
+        ${glesv2-lib}
+        ${egl-lib}
+        ${android-lib}
+        ${jnigraphics-lib}
+        ${log-lib}
+        )
 # Searches for a specified prebuilt library and stores the path as a
 # variable. Because CMake includes system libraries in the search path by
 # default, you only need to specify the name of the public NDK library

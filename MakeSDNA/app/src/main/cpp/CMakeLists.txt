@@ -76,8 +76,11 @@ target_link_libraries( makesdna_cli
         -Wl,--end-group
         )
 set_target_properties( makesdna_cli PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/cli_output"
-        LINK_FLAGS "-static" )
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/cli_output" )
+# 2026-08-15: was LINK_FLAGS "-static" - reverted to match native-lib's
+# proven-working dynamic linking (see MakeSRNA/CMakeLists.txt for the
+# fuller rationale - same reasoning applies here even though makesdna's
+# dependency graph is much smaller and less likely to need logging).
 
 # Searches for a specified prebuilt library and stores the path as a
 # variable. Because CMake includes system libraries in the search path by
@@ -102,3 +105,5 @@ target_link_libraries( # Specifies the target library.
                        # Links the target library to the log library
                        # included in the NDK.
                        ${log-lib} )
+
+target_link_libraries( makesdna_cli ${log-lib} )
